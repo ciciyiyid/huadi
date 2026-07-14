@@ -1,0 +1,472 @@
+﻿<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>&#23398;&#24773;&#25968;&#25454;&#21487;&#35270;&#21270;&#24179;&#21488;</title>
+    <link rel="stylesheet" href="./styles.css" />
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar">
+        <div class="brand">
+          <span class="brand-mark">BI</span>
+          <div>
+            <strong>&#23398;&#24773;&#25968;&#25454;&#20013;&#24515;</strong>
+            <small>Learning Analytics</small>
+          </div>
+        </div>
+
+        <nav class="nav-list">
+          <a href="#overview" class="active" data-section-link="overview">&#23398;&#24773;&#24635;&#35272;</a>
+          <a href="#student" data-section-link="student">&#25105;&#30340;&#23398;&#20064;</a>
+          <a href="#teacher" data-section-link="teacher">&#25480;&#35838;&#24773;&#20917;</a>
+          <a href="#admin" data-section-link="admin">&#31649;&#29702;&#20998;&#26512;</a>
+        </nav>
+      </aside>
+
+      <main class="content">
+        <header class="topbar">
+          <div>
+            <h1>&#23398;&#24773;&#25968;&#25454;&#21487;&#35270;&#21270;&#24179;&#21488;</h1>
+            <p>&#24635;&#35272;&#20849;&#20139;&#65292;&#23398;&#29983;&#30475;&#20010;&#20154;&#23398;&#20064;&#65292;&#25945;&#24072;&#30475;&#25480;&#35838;&#24773;&#20917;&#65292;&#31649;&#29702;&#21592;&#30475;&#20840;&#23616;&#39118;&#38505;&#12290;</p>
+          </div>
+          <div class="topbar-actions">
+            <div class="filter-strip" data-admin-tool>
+              <button id="exportReportBtn" class="secondary">&#23548;&#20986;&#25253;&#34920;</button>
+              <button id="exportCourseRiskBtn" class="secondary">&#23548;&#20986;&#35838;&#31243;&#39118;&#38505;</button>
+              <button id="exportHighRiskBtn" class="secondary">&#23548;&#20986;&#39640;&#21361;&#28165;&#21333;</button>
+            </div>
+            <div class="user-menu">
+              <button id="userMenuBtn" class="avatar-button">--</button>
+              <div id="userPopover" class="user-popover hidden">
+                <div id="userBadge" class="user-badge hidden">
+                  <span id="userRole">--</span>
+                  <strong id="userName">--</strong>
+                  <small id="userScope">--</small>
+                </div>
+                <details class="connection-settings">
+                  <summary>&#36830;&#25509;&#35774;&#32622;</summary>
+                  <label>
+                    &#21518;&#31471;&#22320;&#22336;
+                    <input id="baseUrl" value="https://comma-outgrow-breach.ngrok-free.dev" />
+                  </label>
+                </details>
+                <button id="logoutBtn" class="ghost-button">&#36864;&#20986;&#30331;&#24405;</button>
+                <p id="loginStatus" class="status">&#35831;&#20808;&#30331;&#24405;</p>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        <section id="overview" class="section" data-section="overview">
+          <div class="section-title">
+            <h2>&#23398;&#24773;&#24635;&#35272;</h2>
+            <span>&#25152;&#26377;&#35282;&#33394;&#21487;&#35265;</span>
+          </div>
+          <div class="metric-grid">
+            <article class="metric-card drill-card" data-drill="students">
+              <small>&#36739;&#19978;&#21608; +12.4%</small>
+              <span>&#24635;&#23398;&#29983;&#25968;</span>
+              <strong id="studentCount">--</strong>
+            </article>
+            <article class="metric-card">
+              <small>&#36739;&#19978;&#21608; +2.1%</small>
+              <span>&#24635;&#25945;&#24072;&#25968;</span>
+              <strong id="teacherCount">--</strong>
+            </article>
+            <article class="metric-card">
+              <small>&#36739;&#19978;&#21608; +3.8%</small>
+              <span>&#35838;&#31243;&#36164;&#28304;&#24635;&#25968;</span>
+              <strong id="resourceCount">--</strong>
+            </article>
+            <article class="metric-card drill-card" data-drill="study-hours">
+              <small>&#36739;&#19978;&#21608; +9.6%</small>
+              <span>&#32047;&#35745;&#23398;&#20064;&#26102;&#38271;</span>
+              <strong id="totalStudyHours">--</strong>
+            </article>
+          </div>
+
+          <div class="dashboard-grid">
+            <article class="panel wide">
+              <div class="panel-title">
+                <h2>&#32047;&#35745;&#23398;&#20064;&#26102;&#38271;&#36235;&#21183;</h2>
+                <div class="panel-actions">
+                  <button class="mini-button active" data-trend-mode="weekly">&#21608;&#27719;&#24635;</button>
+                  <button class="mini-button" data-trend-mode="daily">&#26085;&#27719;&#24635;</button>
+                  <button id="exportTrendBtn" class="mini-button" data-admin-tool>&#23548;&#20986;&#21306;&#38388;</button>
+                </div>
+              </div>
+              <div id="weeklyChart" class="chart"></div>
+            </article>
+            <article class="panel">
+              <div class="panel-title">
+                <h2>&#39044;&#35686;&#31561;&#32423;&#20998;&#24067;</h2>
+                <span>&#23398;&#29983;&#21344;&#27604;</span>
+              </div>
+              <div id="warningPie" class="chart"></div>
+            </article>
+            <article class="panel wide">
+              <div class="panel-title">
+                <h2>&#35838;&#31243;&#22810;&#32500;&#24230;&#25928;&#33021;&#25490;&#34892;</h2>
+                <div class="panel-actions">
+                  <button class="mini-button active" data-course-sort="learner">&#36873;&#35838;&#20154;&#25968;</button>
+                  <button class="mini-button" data-course-sort="completion">&#24179;&#22343;&#23436;&#25104;&#29575;</button>
+                  <button class="mini-button" data-course-sort="score">&#24179;&#22343;&#27979;&#39564;&#20998;</button>
+                </div>
+              </div>
+              <div id="enrollmentChart" class="chart"></div>
+            </article>
+            <article class="panel">
+              <div class="panel-title stacked-title">
+                <h2>&#21508;&#23398;&#20301;&#24179;&#22343;&#23398;&#20064;&#26102;&#38271;</h2>
+                <div class="panel-actions">
+                  <select id="degreeFilter" data-admin-tool>
+                    <option value="">&#20840;&#37096;&#23398;&#20301;</option>
+                  </select>
+                  <button class="mini-button active" data-degree-metric="study">&#23398;&#20064;&#26102;&#38271;</button>
+                  <button class="mini-button" data-degree-metric="score">&#27979;&#39564;&#25104;&#32489;</button>
+                  <button class="mini-button" data-degree-metric="submit">&#20316;&#19994;&#25552;&#20132;</button>
+                  <button class="mini-button" data-degree-metric="risk">&#39640;&#39118;&#38505;</button>
+                </div>
+              </div>
+              <div id="degreeStudyChart" class="chart"></div>
+            </article>
+          </div>
+        </section>
+
+        <section id="student" class="section" data-section="student">
+          <div class="section-title">
+            <h2>&#25105;&#30340;&#23398;&#20064;</h2>
+            <div class="inline-form student-toolbar">
+              <input id="studentId" value="STU100000" />
+              <button id="loadStudentBtn" class="secondary">&#26597;&#35810;</button>
+              <div class="student-top-tag">
+                <span>&#20010;&#20154;&#26631;&#31614;</span>
+                <strong id="studentPersonaLabel">--</strong>
+              </div>
+              <button id="exportStudentReportBtn" class="secondary">&#23548;&#20986;&#20010;&#20154;&#25253;&#21578;</button>
+            </div>
+          </div>
+          <div class="metric-grid">
+            <article class="metric-card">
+              <small id="studentCourseHint">--</small>
+              <span>&#25152;&#36873;&#35838;&#31243;</span>
+              <strong id="studentSelectedCourse">--</strong>
+            </article>
+                        <article class="metric-card">
+              <small id="studentTimeHint">--</small>
+              <span>&#24635;&#23398;&#20064;&#26102;&#38271;</span>
+              <strong id="studentTotalTime">--</strong>
+            </article>
+            <article class="metric-card">
+              <small id="studentCompletionHint">--</small>
+              <span>&#35838;&#31243;&#23436;&#25104;&#29575;</span>
+              <strong id="studentCompletion">--</strong>
+            </article>
+            <article class="metric-card">
+              <small id="studentGradeHint">--</small>
+              <span>&#20316;&#19994;&#25104;&#32489;</span>
+              <strong id="studentGrade">--</strong>
+            </article>
+            <article class="metric-card">
+              <small id="studentQuizHint">--</small>
+              <span>&#27979;&#39564;&#22343;&#20998;</span>
+              <strong id="studentQuizScore">--</strong>
+            </article>
+            <article class="metric-card">
+              <small id="studentVideoHint">--</small>
+              <span>&#35270;&#39057;&#23436;&#35838;&#29575;</span>
+              <strong id="studentVideoRate">--</strong>
+            </article>
+            <article class="metric-card">
+              <small id="studentDaysHint">--</small>
+              <span>&#23398;&#20064;&#22825;&#25968;</span>
+              <strong id="studentLearningDays">--</strong>
+            </article>
+            <article class="metric-card warning">
+              <small id="studentRiskHint">--</small>
+              <span>&#20010;&#20154;&#39044;&#35686;</span>
+              <strong id="studentWarningLevel">--</strong>
+            </article>
+          </div>
+          <div class="dashboard-grid student-learning-grid">
+            <div class="student-main-stack">
+              <article class="panel student-radar-panel">
+                <div class="panel-title">
+                  <h2>&#20010;&#20154;&#23398;&#20064;&#25351;&#26631; vs &#29677;&#32423;&#24179;&#22343;&#22522;&#20934;</h2>
+                  <span id="studentDetailTitle">--</span>
+                </div>
+                <div id="studentRadar" class="chart"></div>
+              </article>
+              <article class="panel wide student-compare-panel">
+                <div class="panel-title">
+                  <h2>&#20010;&#20154;&#19982;&#20854;&#20182;&#23398;&#29983;&#23545;&#27604;</h2>
+                  <span id="studentCompareTitle">同课程对比</span>
+                </div>
+                <div id="studentCompareChart" class="chart"></div>
+              </article>
+            </div>
+            <article class="panel detail-panel student-side-panel">
+              <div class="panel-title">
+                <h2>&#23398;&#20064;&#19982;&#39044;&#35686;&#26126;&#32454;</h2>
+                <span>&#20010;&#20154;</span>
+              </div>
+              <div id="studentDetail" class="student-detail-layout"></div>
+              <section class="student-tag-pie-wrap">
+                <h3>学生标签占比</h3>
+                <div id="studentTagPie" class="chart student-tag-pie-chart"></div>
+              </section>
+            </article>
+          </div>
+        </section>
+
+        <section id="teacher" class="section" data-section="teacher">
+          <div class="section-title">
+            <h2>&#25480;&#35838;&#24773;&#20917;</h2>
+            <span>&#25152;&#25480;&#35838;&#31243;&#25945;&#23398;&#34920;&#29616;&#19982;&#39044;&#35686;</span>
+          </div>
+          <div class="course-hero">
+            <div>
+              <span id="teacherCourseCode" class="course-code">--</span>
+              <h2 id="teacherCourseNameEn">--</h2>
+              <p id="teacherCourseNameZh">--</p>
+            </div>
+            <div class="course-type-card">
+              <span id="teacherCourseType">--</span>
+              <strong id="teacherCourseAdvice">--</strong>
+            </div>
+          </div>
+          <div class="metric-grid">
+            <article class="metric-card">
+              <span>&#25480;&#35838;&#23398;&#29983;&#25968;</span>
+              <strong id="teacherStudentCount">--</strong>
+            </article>
+            <article class="metric-card">
+              <span>&#23398;&#29983;&#23436;&#25104;&#29575;</span>
+              <strong id="teacherFinishRate">--</strong>
+            </article>
+            <article class="metric-card">
+              <span>&#24179;&#22343;&#24471;&#20998;</span>
+              <strong id="teacherAvgScore">--</strong>
+            </article>
+            <article class="metric-card">
+              <span>&#20316;&#19994;&#25552;&#20132;&#29575;</span>
+              <strong id="teacherSubmitRate">--</strong>
+            </article>
+            <article class="metric-card">
+              <span>&#35838;&#31243;&#36827;&#24230;</span>
+              <strong id="teacherProgress">--</strong>
+            </article>
+            <article class="metric-card">
+              <span>&#35270;&#39057;&#23436;&#35838;&#29575;</span>
+              <strong id="teacherVideoRate">--</strong>
+            </article>
+            <article class="metric-card">
+              <span>&#23398;&#29983;&#28385;&#24847;&#24230;</span>
+              <strong id="teacherSatisfaction">--</strong>
+            </article>
+            <article class="metric-card warning">
+              <span>&#39640;&#39118;&#38505;&#29575;</span>
+              <strong id="teacherHighRisk">--</strong>
+            </article>
+          </div>
+          <div class="dashboard-grid learning-analysis-grid">
+            <div class="teacher-main-stack">
+              <article class="panel analysis-radar-panel">
+                <div class="panel-title">
+                  <h2>&#25480;&#35838;&#35838;&#31243;&#25351;&#26631;</h2>
+                  <span id="teacherDetailTitle">--</span>
+                </div>
+                <div id="teacherRadar" class="chart"></div>
+              </article>
+              <article class="panel wide teacher-comparison-panel">
+                <div class="panel-title">
+                  <h2>&#25152;&#25480;&#35838;&#31243;&#19982;&#20840;&#24179;&#21488;&#35838;&#31243;&#23545;&#27604;</h2>
+                  <span>&#34394;&#32447;&#20026;&#24179;&#21488;&#22343;&#20540;</span>
+                </div>
+                <div id="teacherComparisonChart" class="chart"></div>
+              </article>
+            </div>
+            <div class="teacher-side-stack">
+              <article class="panel teacher-risk-panel">
+                <div class="panel-title">
+                  <h2>&#25480;&#35838;&#35838;&#31243;&#39118;&#38505;&#21344;&#27604;</h2>
+                  <span>&#23398;&#29983;&#20998;&#23618;</span>
+                </div>
+                <div id="teacherRiskPie" class="chart"></div>
+              </article>
+              <article class="panel detail-panel">
+                <div class="panel-title">
+                  <h2>&#35838;&#31243;&#39044;&#35686;&#19982;&#34920;&#29616;</h2>
+                  <span>&#25945;&#24072;&#35270;&#35282;</span>
+                </div>
+                <div id="teacherDetail" class="student-detail-layout"></div>
+              </article>
+            </div>
+          </div>
+        </section>
+
+        <section id="admin" class="section" data-section="admin">
+          <div class="section-title">
+            <h2>&#31649;&#29702;&#20998;&#26512;</h2>
+            <span>&#20840;&#23616;&#35838;&#31243;&#39118;&#38505;&#19982;&#23398;&#20301;&#23398;&#24773;&#35780;&#20272;</span>
+          </div>
+
+          <div class="metric-grid admin-risk-grid">
+            <article class="metric-card drill-card" data-admin-focus="all-students">
+              <small>&#20840;&#23616;</small>
+              <span>&#24179;&#21488;&#24635;&#23398;&#29983;&#25968;</span>
+              <strong id="adminTotalStudents">--</strong>
+            </article>
+            <article class="metric-card warning drill-card" data-admin-focus="high-risk">
+              <small id="adminHighRiskRatio">--</small>
+              <span>&#39640;&#39118;&#38505;&#23398;&#29983;</span>
+              <strong id="adminHighRiskStudents">--</strong>
+            </article>
+            <article class="metric-card">
+              <small>&#20840;&#35838;&#31243;</small>
+              <span>&#24179;&#22343;&#23436;&#25104;&#29575;</span>
+              <strong id="adminAvgCompletion">--</strong>
+            </article>
+            <article class="metric-card">
+              <small>&#20840;&#23616;</small>
+              <span>&#25972;&#20307;&#24179;&#22343;&#27979;&#39564;&#20998;</span>
+              <strong id="adminAvgQuiz">--</strong>
+            </article>
+          </div>
+
+          <div class="dashboard-grid">
+            <article class="panel wide">
+              <div class="panel-title">
+                <h2>&#21508;&#35838;&#31243;&#23398;&#29983;&#39118;&#38505;&#20998;&#23618;&#20998;&#24067;</h2>
+                <div class="panel-actions">
+                  <select id="adminCourseFilter">
+                    <option value="">&#20840;&#37096;&#35838;&#31243;</option>
+                  </select>
+                  <button class="mini-button active" data-risk-sort="total">&#25353;&#24635;&#20154;&#25968;</button>
+                  <select id="adminRiskSortSelect" class="risk-sort-select">
+                    <option value="high">&#25353;&#39640;&#39118;&#38505;&#20154;&#25968;</option>
+                    <option value="mid">&#25353;&#20013;&#39118;&#38505;&#20154;&#25968;</option>
+                    <option value="low">&#25353;&#20302;&#39118;&#38505;&#20154;&#25968;</option>
+                    <option value="safe">&#25353;&#23433;&#20840;&#20154;&#25968;</option>
+                  </select>
+                </div>
+              </div>
+              <div id="courseRiskStackChart" class="chart"></div>
+            </article>
+            <article class="panel">
+              <div class="panel-title">
+                <h2>&#35838;&#31243;&#24179;&#22343;&#34920;&#29616;</h2>
+                <div class="panel-actions">
+                  <span>&#24179;&#21488;&#22343;&#20540;&#34394;&#32447;</span>
+                  <button class="mini-button active" data-performance-extra="core">&#26680;&#24515;</button>
+                  <button class="mini-button" data-performance-extra="video">&#35270;&#39057;</button>
+                  <button class="mini-button" data-performance-extra="session">&#21333;&#27425;&#26102;&#38271;</button>
+                </div>
+              </div>
+              <div id="coursePerformanceChart" class="chart"></div>
+            </article>
+          </div>
+
+          <div class="admin-lower-grid">
+            <div class="admin-lower-left">
+              <article class="panel wide">
+                <div class="panel-title">
+                  <h2>&#21508;&#23398;&#20301;&#32676;&#20307;&#23398;&#24773;&#19982;&#39118;&#38505;&#21344;&#27604;&#20998;&#26512;</h2>
+                  <div class="panel-actions">
+                    <button class="mini-button active" data-admin-degree-bar="ratio">&#20154;&#25968;&#21344;&#27604;</button>
+                    <button class="mini-button" data-admin-degree-bar="score">&#27979;&#39564;&#20998;</button>
+                    <button class="mini-button" data-admin-degree-bar="study">&#23398;&#20064;&#26102;&#38271;</button>
+                  </div>
+                </div>
+                <div id="educationRiskChart" class="chart"></div>
+              </article>
+              <article class="panel wide">
+                <div class="panel-title">
+                  <h2>&#25945;&#23398;&#36164;&#28304;&#35775;&#38382;&#28909;&#24230;&#25490;&#34892;</h2>
+                  <span>&#35775;&#38382;&#37327; / &#37325;&#22797;&#35266;&#30475;&#27425;&#25968;</span>
+                </div>
+                <div id="resourceHeatChart" class="chart"></div>
+              </article>
+            </div>
+
+            <article class="panel table-panel risk-disposal-panel">
+              <table>
+                <caption>
+                  <div class="table-toolbar">
+                    <strong>&#39640;&#21361;&#23398;&#29983;&#22788;&#32622;&#38754;&#26495;</strong>
+                    <span id="riskTableSummary">--</span>
+                  </div>
+                  <div class="table-filters">
+                    <input id="studentKeyword" placeholder="&#23398;&#21495;" />
+                    <input id="courseKeyword" placeholder="&#35838;&#31243;" />
+                    <select id="tableRiskFilter">
+                      <option value="">&#20840;&#37096;&#39118;&#38505;</option>
+                      <option value="&#39640;&#39118;&#38505;">&#39640;&#39118;&#38505;</option>
+                      <option value="&#20013;&#39118;&#38505;">&#20013;&#39118;&#38505;</option>
+                      <option value="&#20302;&#39118;&#38505;">&#20302;&#39118;&#38505;</option>
+                      <option value="&#23433;&#20840;">&#23433;&#20840;</option>
+                    </select>
+                    <select id="pageSizeSelect">
+                      <option value="10">10 / &#39029;</option>
+                      <option value="20">20 / &#39029;</option>
+                      <option value="50">50 / &#39029;</option>
+                    </select>
+                    <button id="batchExportBtn" class="mini-button">&#25209;&#37327;&#23548;&#20986;</button>
+                  </div>
+                </caption>
+                <thead>
+                  <tr>
+                    <th><input id="selectAllWarnings" type="checkbox" /></th>
+                    <th>&#23398;&#29983;</th>
+                    <th>&#35838;&#31243;</th>
+                    <th>&#39044;&#35686;</th>
+                    <th>&#36827;&#24230;</th>
+                    <th>&#25805;&#20316;</th>
+                  </tr>
+                </thead>
+                <tbody id="warningRows"></tbody>
+              </table>
+              <div class="pagination-bar">
+                <button id="prevPageBtn" class="mini-button">&#19978;&#19968;&#39029;</button>
+                <span id="pageInfo">1 / 1</span>
+                <button id="nextPageBtn" class="mini-button">&#19979;&#19968;&#39029;</button>
+              </div>
+            </article>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <div id="drillModal" class="modal hidden">
+      <div class="modal-panel">
+        <div class="modal-title">
+          <h2 id="modalTitle">--</h2>
+          <button id="modalCloseBtn" class="ghost-button">&#20851;&#38381;</button>
+        </div>
+        <div id="modalBody" class="modal-body"></div>
+      </div>
+    </div>
+
+    <script src="./app.js"></script>
+  </body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

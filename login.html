@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>&#30331;&#24405; - &#23398;&#24773;&#25968;&#25454;&#21487;&#35270;&#21270;&#24179;&#21488;</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body class="login-page">
+    <main class="login-shell">
+      <section class="login-hero">
+        <div class="brand login-brand">
+          <span class="brand-mark">BI</span>
+          <div>
+            <strong>&#23398;&#24773;&#25968;&#25454;&#20013;&#24515;</strong>
+            <small>Learning Analytics</small>
+          </div>
+        </div>
+        <h1>&#23398;&#24773;&#25968;&#25454;&#21487;&#35270;&#21270;&#24179;&#21488;</h1>
+        <p>&#25353;&#35282;&#33394;&#36827;&#20837;&#65306;&#23398;&#29983;&#26597;&#30475;&#20010;&#20154;&#23398;&#20064;&#65292;&#25945;&#24072;&#26597;&#30475;&#25480;&#35838;&#24773;&#20917;&#65292;&#31649;&#29702;&#21592;&#26597;&#30475;&#20840;&#23616;&#39118;&#38505;&#12290;</p>
+      </section>
+
+      <section class="login-card">
+        <h2>&#30331;&#24405;</h2>
+        <label>
+          &#24080;&#21495;
+          <input id="username" value="admin01" autocomplete="username" />
+        </label>
+        <label>
+          &#23494;&#30721;
+          <input id="password" type="password" value="admin123" autocomplete="current-password" />
+        </label>
+        <details class="connection-settings light">
+          <summary>&#36830;&#25509;&#35774;&#32622;</summary>
+          <label>
+            &#21518;&#31471;&#22320;&#22336;
+            <input id="baseUrl" value="https://comma-outgrow-breach.ngrok-free.dev" />
+          </label>
+        </details>
+        <button id="loginBtn">&#30331;&#24405;&#24182;&#36827;&#20837;&#31995;&#32479;</button>
+        <p id="loginStatus" class="login-status">&#35831;&#36755;&#20837;&#24080;&#21495;&#21644;&#23494;&#30721;</p>
+      </section>
+    </main>
+
+    <script src="./login.js"></script>
+  </body>
+</html>
