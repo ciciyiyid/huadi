@@ -909,6 +909,31 @@ th {
   font-size: 16px;
 }
 
+.profile-label-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+  padding: 12px 14px;
+  border: 1px solid #b9dcff;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #f3f9ff 0%, #eefbf7 100%);
+}
+
+.profile-label-card span {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.profile-label-card strong {
+  color: #005ea8;
+  font-size: 18px;
+  font-weight: 800;
+  text-align: right;
+}
+
 .detail-list.compact {
   grid-template-columns: 130px minmax(0, 1fr);
   gap: 8px 12px;

@@ -496,9 +496,25 @@ function currentStudentCourse() {
   return courses.find((course) => studentCourseKey(course) === state.selectedStudentCourse) || courses[0] || { feature: {}, warning: {} };
 }
 
+function pickStudentProfileLabel(data = {}) {
+  const profile = data.profile || {};
+  const basic = data.basic || {};
+  return profile["人群标签"]
+    || profile.persona_label
+    || profile.cluster_label
+    || profile.tag_label
+    || profile.student_tag
+    || basic["人群标签"]
+    || basic.persona_label
+    || data["人群标签"]
+    || data.persona_label
+    || data.cluster_label
+    || "--";
+}
+
 function studentPersonaLabel(data, course, values, benchmark) {
-  const profileLabel = data.profile?.["人群标签"] || data.profile?.persona_label || data.profile?.cluster_label;
-  if (profileLabel) return profileLabel;
+  const profileLabel = pickStudentProfileLabel(data);
+  if (profileLabel !== "--") return profileLabel;
   if (values.completion >= benchmark.completion * 1.08 && values.score >= benchmark.score * 1.05 && values.time >= benchmark.time * 1.05) return "自律学霸";
   if (values.completion >= benchmark.completion && values.video >= benchmark.video && values.grade >= benchmark.grade) return "稳定进阶";
   if (String(course.warning?.warning_level || "").includes("高")) return "风险预警型";
@@ -778,7 +794,7 @@ async function loadTeacherPage() {
   $("teacherVideoRate").textContent = formatNumber(video, "%");
   $("teacherSatisfaction").textContent = formatNumber(detail.avg_student_satisfaction);
   $("teacherHighRisk").textContent = formatNumber(risk.high_risk_pct, "%");
-  $("teacherDetailTitle").textContent = `${detail.Course_ID} 路 ${detail.Course_Name}`;
+  $("teacherDetailTitle").textContent = `${detail.Course_ID || ""} ${detail.Course_Name || ""}`.trim();
 
   chart("teacherRadar").setOption({
     tooltip: {
@@ -1300,10 +1316,15 @@ async function openStudentProfile(studentId) {
   const feature = data.feature || {};
   const warning = data.warning || {};
   const profile = data.profile || {};
+  const profileLabel = pickStudentProfileLabel(data);
   openModal(`${studentId} \u5b66\u751f\u753b\u50cf`, `
     <div class="profile-grid">
       <article>
         <h3>\u57fa\u672c\u4fe1\u606f</h3>
+        <div class="profile-label-card">
+          <span>\u5b66\u751f\u6807\u7b7e</span>
+          <strong>${profileLabel}</strong>
+        </div>
         <dl class="detail-list compact">
           <dt>\u5b66\u53f7</dt><dd>${basic.student_id || studentId}</dd>
           <dt>\u59d3\u540d</dt><dd>${basic.student_name || "--"}</dd>
