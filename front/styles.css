@@ -674,7 +674,7 @@ h1 {
 }
 
 .table-panel {
-  overflow: auto;
+  overflow: visible;
 }
 
 table {
@@ -771,7 +771,26 @@ th {
 }
 
 .risk-disposal-panel table {
-  min-width: 680px;
+  min-width: 0;
+  table-layout: fixed;
+}
+
+.risk-disposal-panel th,
+.risk-disposal-panel td {
+  white-space: normal;
+}
+
+.risk-disposal-panel th:first-child,
+.risk-disposal-panel td:first-child {
+  width: 44px;
+  text-align: center;
+}
+
+.risk-disposal-panel td:last-child {
+  display: flex;
+  gap: 6px;
+  flex-wrap: nowrap;
+  align-items: center;
 }
 
 .note-box {

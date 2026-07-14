@@ -165,6 +165,10 @@ function formatNumber(value, suffix = "") {
   return `${number.toLocaleString("zh-CN", { maximumFractionDigits: 2 })}${suffix}`;
 }
 
+function axisUnitFormatter(unit = "") {
+  return (value) => formatNumber(value, unit);
+}
+
 function numberValue(...values) {
   for (const value of values) {
     const number = Number(value);
@@ -262,7 +266,7 @@ function renderTrendChart() {
       formatter(items) {
         const index = items[0]?.dataIndex || 0;
         const row = rows[index] || {};
-        const lines = items.map((item) => `${item.marker}${item.seriesName}: ${formatNumber(item.value)}`);
+        const lines = items.map((item) => `${item.marker}${item.seriesName}: ${formatNumber(item.value, item.seriesName.includes("人数") ? "人" : "h")}`);
         lines.push(`\u5e73\u5747\u5355\u6b21\u5b66\u4e60: ${formatNumber(row.avg_session_duration_min, "min")}`);
         lines.push(`\u5e73\u5747\u6d4b\u9a8c\u5206: ${formatNumber(row.avg_quiz_score)}`);
         return [`<strong>${row.week_label}</strong>`, ...lines].join("<br/>");
@@ -270,9 +274,12 @@ function renderTrendChart() {
     },
     dataZoom: currentRole() === "admin" ? [{ type: "inside" }, { type: "slider", height: 18, bottom: 6 }] : [],
     legend: { top: 0 },
-    grid: { left: 54, right: 64, top: 44, bottom: currentRole() === "admin" ? 52 : 38, containLabel: true },
+    grid: { left: 34, right: 64, top: 44, bottom: currentRole() === "admin" ? 32 : 22, containLabel: true },
     xAxis: { type: "category", boundaryGap: true, data: rows.map((row) => row.week_label) },
-    yAxis: [{ type: "value", name: "\u5b66\u4e60\u65f6\u957f" }, { type: "value", name: "\u5b66\u4e60\u4eba\u6570" }],
+    yAxis: [
+      { type: "value", name: "学习时长(h)", axisLabel: { formatter: axisUnitFormatter("h") } },
+      { type: "value", name: "学习人数(人)", position: "right", axisLabel: { formatter: axisUnitFormatter("人") } },
+    ],
     series: [
       { name: "\u603b\u5b66\u4e60\u65f6\u957f", type: "line", smooth: true, data: rows.map((row) => numberValue(row.total_study_time_hours)), areaStyle: { opacity: 0.14 } },
       { name: "\u5b66\u4e60\u4eba\u6570", type: "bar", yAxisIndex: 1, data: rows.map((row) => numberValue(row.learner_count)), itemStyle: { color: "#12a594" } },
@@ -288,7 +295,7 @@ function renderWarningPie() {
   if (existingLegend) existingLegend.remove();
   if (panel) panel.insertAdjacentHTML("beforeend", warningLegendGridHtml(warnings));
   chart("warningPie").setOption({
-    tooltip: { trigger: "item" },
+    tooltip: { trigger: "item", formatter: "{b}: {c}人 ({d}%)" },
     legend: { show: false },
     series: [{ type: "pie", radius: ["45%", "70%"], center: ["50%", "40%"], data: warnings.map((row) => ({ name: row.warning_level, value: numberValue(row.student_count), itemStyle: { color: riskColor(row.warning_level) } })) }],
   });
@@ -302,7 +309,7 @@ function warningRuleDetail(row) {
   const loginFrequency = numberValue(row.Login_Frequency, row.login_frequency, row.login_freq, row.Avg_Login_Frequency)
   const daysSinceLogin = numberValue(row.Days_Since_Last_Login, row.days_since_last_login, row.avg_days_since_login)
   const submitRate = numberValue(row.Assignment_Submission_Rate, row.assignment_submission_rate, row.submit_rate)
-  const missedAssignments = numberValue(row.Missed_Assignment_Count, row.missed_assignment_count, row.total_assignments_missed)
+  const missedAssignments = numberValue(row.Assignments_Missed, row.Missed_Assignment_Count, row.missed_assignment_count, row.total_assignments_missed)
   const progress = numberValue(row.Progress_Percentage, row.progress_percentage, row.avg_progress)
   const videoRate = numberValue(row.Video_Completion_Rate, row.video_completion_rate, row.avg_video_completion_rate)
   const quizScore = numberValue(row.Quiz_Score_Avg, row.quiz_score_avg, row.avg_quiz_score)
@@ -364,12 +371,18 @@ function renderEnrollmentChart() {
   });
   const valueKey = state.courseSort === "score" ? "avg_quiz_score" : state.courseSort === "completion" ? "avg_progress" : "learner_count";
   const seriesName = state.courseSort === "score" ? "\u5e73\u5747\u6d4b\u9a8c\u5206" : state.courseSort === "completion" ? "\u5e73\u5747\u5b8c\u6210\u7387" : "\u9009\u8bfe\u4eba\u6570";
-  const unit = state.courseSort === "completion" ? "%" : "";
+  const unit = state.courseSort === "completion" ? "%" : state.courseSort === "learner" ? "人" : "分";
   chart("enrollmentChart").setOption({
-    tooltip: { trigger: "axis" },
-    grid: { left: 54, right: 18, top: 28, bottom: 86 },
+    tooltip: {
+      trigger: "axis",
+      formatter(items) {
+        const item = items[0] || {};
+        return `${item.marker}${item.name}<br/>${seriesName}: ${formatNumber(item.value, unit)}`;
+      },
+    },
+    grid: { left: 64, right: 18, top: 50, bottom: 72 },
     xAxis: { type: "category", axisLabel: { rotate: 28 }, data: rows.map((row) => row.course_name || row.Course_Name || row.course_id) },
-    yAxis: { type: "value" },
+    yAxis: { type: "value", name: unit, axisLabel: { formatter: axisUnitFormatter(unit) } },
     series: [{
       name: seriesName,
       type: "bar",
@@ -390,7 +403,7 @@ function renderDegreeChart() {
   const rows = filteredEducation();
   const config = {
     study: { name: "\u5e73\u5747\u603b\u5b66\u4e60\u65f6\u957f", key: "avg_total_study_hours", fallback: "avg_total_study_time_hours", unit: "h", color: "#12a594" },
-    score: { name: "\u5e73\u5747\u6d4b\u9a8c\u6210\u7ee9", key: "avg_quiz_score", unit: "", color: "#1976d2" },
+    score: { name: "\u5e73\u5747\u6d4b\u9a8c\u6210\u7ee9", key: "avg_quiz_score", unit: "分", color: "#1976d2" },
     submit: { name: "\u5e73\u5747\u4f5c\u4e1a\u63d0\u4ea4\u7387", key: "avg_submit_rate", unit: "%", color: "#7c3aed" },
     risk: { name: "\u9ad8\u98ce\u9669\u4eba\u6570\u5360\u6bd4", key: "high_risk_pct", unit: "%", color: "#d92d20" },
   }[state.degreeMetric];
@@ -399,10 +412,16 @@ function renderDegreeChart() {
   const maxValue = Math.max(...allValues, 0);
   const yMax = maxValue ? Math.ceil(maxValue * 1.18) : undefined;
   chart("degreeStudyChart").setOption({
-    tooltip: { trigger: "axis" },
-    grid: { left: 44, right: 18, top: 24, bottom: 40 },
+    tooltip: {
+      trigger: "axis",
+      formatter(items) {
+        const item = items[0] || {};
+        return `${item.marker}${item.name}<br/>${config.name}: ${formatNumber(item.value, config.unit)}`;
+      },
+    },
+    grid: { left: 44, right: 18, top: 34, bottom: 40 },
     xAxis: { type: "category", data: rows.map((row) => row.Education_Level) },
-    yAxis: { type: "value", name: config.unit, max: yMax },
+    yAxis: { type: "value", name: config.unit, max: yMax, axisLabel: { formatter: axisUnitFormatter(config.unit) } },
     series: [{
       name: config.name,
       type: "bar",
@@ -488,6 +507,8 @@ function studentPersonaLabel(data, course, values, benchmark) {
 }
 
 function renderStudentComparisonChart(values, benchmark, warning, personaLabel) {
+  const labels = ["学习时长", "课程完成率", "视频完课率", "作业成绩", "测验均分"];
+  const units = ["h", "%", "%", "分", "分"];
   const strongPeer = {
     time: Number((benchmark.time * 1.28).toFixed(2)),
     completion: Math.min(100, Number((benchmark.completion * 1.14).toFixed(1))),
@@ -497,15 +518,25 @@ function renderStudentComparisonChart(values, benchmark, warning, personaLabel) 
   };
   $("studentCompareTitle").textContent = `${warning.Course_ID || ""} ${warning.Course_Name || ""}`.trim() || personaLabel;
   chart("studentCompareChart").setOption({
-    tooltip: { trigger: "axis" },
+    tooltip: {
+      trigger: "axis",
+      formatter(items) {
+        const index = items[0]?.dataIndex || 0;
+        const unit = units[index];
+        return [
+          `<strong>${labels[index]}</strong>`,
+          ...items.map((item) => `${item.marker}${item.seriesName}: ${formatNumber(item.value, unit)}`),
+        ].join("<br/>");
+      },
+    },
     legend: { top: 0 },
     grid: { left: 52, right: 22, top: 48, bottom: 46, containLabel: true },
-    xAxis: { type: "category", data: ["学习时长", "课程完成率", "视频完课率", "作业成绩", "测验均分"] },
-    yAxis: { type: "value", max: 100 },
+    xAxis: { type: "category", data: labels },
+    yAxis: { type: "value", name: "指标值", max: 100 },
     series: [
-      { name: "本人", type: "bar", barGap: 0, data: [values.time * 10, values.completion, values.video, values.grade, values.score], itemStyle: { color: "#12a594" } },
-      { name: "班级平均", type: "bar", data: [benchmark.time * 10, benchmark.completion, benchmark.video, benchmark.grade, benchmark.score], itemStyle: { color: "#f7c948" } },
-      { name: "优秀学生", type: "bar", data: [strongPeer.time * 10, strongPeer.completion, strongPeer.video, strongPeer.grade, strongPeer.score], itemStyle: { color: "#1976d2" } },
+      { name: "本人", type: "bar", barGap: 0, data: [values.time, values.completion, values.video, values.grade, values.score], itemStyle: { color: "#12a594" } },
+      { name: "班级平均", type: "bar", data: [benchmark.time, benchmark.completion, benchmark.video, benchmark.grade, benchmark.score], itemStyle: { color: "#f7c948" } },
+      { name: "优秀学生", type: "bar", data: [strongPeer.time, strongPeer.completion, strongPeer.video, strongPeer.grade, strongPeer.score], itemStyle: { color: "#1976d2" } },
     ],
   });
 }
@@ -621,13 +652,15 @@ function renderStudentPage() {
       trigger: "item",
       formatter(params) {
         const labels = ["\u5b66\u4e60\u65f6\u957f", "\u8bfe\u7a0b\u5b8c\u6210\u7387", "\u89c6\u9891\u5b8c\u8bfe", "\u4f5c\u4e1a\u6210\u7ee9", "\u6d4b\u9a8c\u5747\u5206"];
-        return labels.map((label, index) => `${label}: ${formatNumber(params.value[index])}`).join("<br/>");
+        const units = ["h", "%", "%", "分", "分"];
+        return labels.map((label, index) => `${label}: ${formatNumber(params.value[index], units[index])}`).join("<br/>");
       },
     },
-    legend: { top: 0 },
+    legend: { top: 0, textStyle: { color: "#101828" } },
     radar: {
       center: ["50%", "56%"],
       radius: "82%",
+      axisName: { color: "#101828", fontSize: 13 },
       indicator: [
         { name: "\u5b66\u4e60\u65f6\u957f", max: 10 },
         { name: "\u8bfe\u7a0b\u5b8c\u6210\u7387", max: 100 },
@@ -748,11 +781,19 @@ async function loadTeacherPage() {
   $("teacherDetailTitle").textContent = `${detail.Course_ID} 路 ${detail.Course_Name}`;
 
   chart("teacherRadar").setOption({
-    tooltip: { trigger: "item" },
-    legend: { top: 0 },
+    tooltip: {
+      trigger: "item",
+      formatter(params) {
+        const labels = ["完成率", "平均得分", "作业提交", "课程进度", "视频完课"];
+        const units = ["%", "分", "%", "%", "%"];
+        return [`<strong>${params.name}</strong>`, ...labels.map((label, index) => `${label}: ${formatNumber(params.value[index], units[index])}`)].join("<br/>");
+      },
+    },
+    legend: { top: 0, textStyle: { color: "#101828" } },
     radar: {
       center: ["50%", "56%"],
       radius: "82%",
+      axisName: { color: "#101828", fontSize: 13 },
       indicator: [
         { name: "\u5b8c\u6210\u7387", max: 100 },
         { name: "\u5e73\u5747\u5f97\u5206", max: 100 },
@@ -812,14 +853,14 @@ function renderTeacherRiskPie(risk) {
   chart("teacherRiskPie").setOption({
     tooltip: {
       trigger: "item",
-      formatter: "{b}: {c} ({d}%)",
+      formatter: "{b}: {c}人 ({d}%)",
     },
     legend: {
       bottom: 0,
       type: "scroll",
       formatter(name) {
         const row = rows.find((item) => item.name === name);
-        return `${name} ${formatNumber(row?.value)}`;
+        return `${name} ${formatNumber(row?.value, "人")}`;
       },
     },
     series: [{
@@ -849,16 +890,16 @@ function renderTeacherComparison(detail, peers, platform) {
         const row = rows[items[0]?.dataIndex] || {};
         return [
           `<strong>${row.Course_ID} ${row.Course_Name || ""}</strong>`,
-          `\u9009\u8bfe\u4eba\u6570: ${formatNumber(row.student_count)}`,
-          `\u5e73\u5747\u5206: ${formatNumber(row.avg_quiz_score)}`,
+          `\u9009\u8bfe\u4eba\u6570: ${formatNumber(row.student_count, "人")}`,
+          `\u5e73\u5747\u5206: ${formatNumber(row.avg_quiz_score, "分")}`,
           `\u63d0\u4ea4\u7387: ${formatNumber(row.avg_submit_rate, "%")}`,
           `\u8fdb\u5ea6: ${formatNumber(row.avg_progress, "%")}`,
           `\u9ad8\u98ce\u9669: ${formatNumber(row.high_risk_pct, "%")}`,
         ].join("<br/>");
       },
     },
-    legend: { top: 0 },
-    grid: { left: 46, right: 44, top: 48, bottom: 46 },
+    legend: { top: 0, textStyle: { color: "#101828" } },
+    grid: { left: 52, right: 82, top: 48, bottom: 46, containLabel: true },
     xAxis: {
       type: "category",
       data: rows.map((row) => row.Course_ID),
@@ -871,7 +912,10 @@ function renderTeacherComparison(detail, peers, platform) {
         },
       },
     },
-    yAxis: [{ type: "value", name: "%" }, { type: "value", name: "\u4eba", position: "right" }],
+    yAxis: [
+      { type: "value", name: "百分比/分", nameTextStyle: { color: "#101828" }, axisLabel: { color: "#101828", formatter: (value) => `${value}` } },
+      { type: "value", name: "人数(人)", position: "right", nameTextStyle: { color: "#101828" }, axisLabel: { color: "#101828", formatter: axisUnitFormatter("人") } },
+    ],
     series: [
       { name: "\u5e73\u5747\u5206", type: "line", smooth: true, data: rows.map((row) => numberValue(row.avg_quiz_score)), markLine: { symbol: "none", lineStyle: { type: "dashed", color: "#98a2b3" }, data: [{ yAxis: platform.score, name: "\u5e73\u53f0\u5747\u5206" }] }, itemStyle: { color: "#1976d2" } },
       { name: "\u4f5c\u4e1a\u63d0\u4ea4", type: "line", smooth: true, data: rows.map((row) => numberValue(row.avg_submit_rate)), markLine: { symbol: "none", lineStyle: { type: "dashed", color: "#98a2b3" }, data: [{ yAxis: platform.submit, name: "\u5e73\u53f0\u63d0\u4ea4" }] }, itemStyle: { color: "#12a594" } },
@@ -885,7 +929,7 @@ async function loadAdminPage() {
   const [courses, education, warnings] = await Promise.all([
     request("/api/warnings/courses"),
     request("/api/warnings/education"),
-    request("/api/warnings/students?page=1&page_size=20"),
+    request(`/api/warnings/students?warning_level=${encodeURIComponent("高风险")}&page=1&page_size=100000`),
   ]);
   state.cache.courseRisk = courses;
   state.cache.education = education;
@@ -943,26 +987,26 @@ function renderCourseRiskStack() {
       trigger: "axis",
       formatter(items) {
         const row = rows[items[0]?.dataIndex] || {};
-        const riskLines = items.map((item) => `${item.marker}${item.seriesName}: ${formatNumber(item.value)}`);
+        const riskLines = items.map((item) => `${item.marker}${item.seriesName}: ${formatNumber(item.value, "人")}`);
         return [
           `<strong>${row.Course_ID} ${row.Course_Name || ""}</strong>`,
-          `\u603b\u9009\u8bfe\u4eba\u6570: ${formatNumber(row.student_count)}`,
+          `\u603b\u9009\u8bfe\u4eba\u6570: ${formatNumber(row.student_count, "人")}`,
           ...riskLines,
-          `\u5e73\u5747\u5206: ${formatNumber(row.avg_quiz_score)}`,
+          `\u5e73\u5747\u5206: ${formatNumber(row.avg_quiz_score, "分")}`,
           `\u4f5c\u4e1a\u63d0\u4ea4\u7387: ${formatNumber(row.avg_submit_rate, "%")}`,
           `\u5e73\u5747\u8fdb\u5ea6: ${formatNumber(row.avg_progress, "%")}`,
         ].join("<br/>");
       },
     },
     legend: { top: 0, formatter: (name) => courseRiskLegendName(name, rows) },
-    grid: { left: 48, right: 18, top: 44, bottom: 54 },
-    xAxis: { type: "category", data: rows.map((row) => row.Course_ID) },
-    yAxis: { type: "value" },
+    grid: { left: 58, right: 28, top: 54, bottom: 50 },
+    xAxis: { type: "category", boundaryGap: true, data: rows.map((row) => row.Course_ID) },
+    yAxis: { type: "value", name: "人数(人)", nameGap: 18, axisLabel: { formatter: axisUnitFormatter("人") } },
     series: [
       { name: names[0], type: "bar", stack: "risk", data: rows.map((row) => numberValue(row.high_risk_count)), itemStyle: { color: "#d92d20" } },
       { name: names[1], type: "bar", stack: "risk", data: rows.map((row) => numberValue(row.mid_risk_count)), itemStyle: { color: "#f79009" } },
       { name: names[2], type: "bar", stack: "risk", data: rows.map((row) => numberValue(row.low_risk_count)), itemStyle: { color: "#12a594" } },
-      { name: names[3], type: "bar", stack: "risk", data: rows.map((row) => numberValue(row.safe_count)), itemStyle: { color: "#1976d2" }, label: { show: true, position: "top", formatter(params) { return formatNumber(rows[params.dataIndex]?.student_count); } } },
+      { name: names[3], type: "bar", stack: "risk", data: rows.map((row) => numberValue(row.safe_count)), itemStyle: { color: "#1976d2" }, label: { show: true, position: "top", distance: 3, fontSize: 11, formatter(params) { return formatNumber(rows[params.dataIndex]?.student_count, "人"); } } },
     ],
   });
   chart("courseRiskStackChart").off("click");
@@ -970,7 +1014,6 @@ function renderCourseRiskStack() {
     const row = rows[params.dataIndex];
     if (!row) return;
     document.getElementById("adminCourseFilter").value = row.Course_ID;
-    if (params.seriesName.includes("\u9ad8")) document.getElementById("tableRiskFilter").value = "\u9ad8\u98ce\u9669";
     renderCourseRiskStack();
     renderWarningTable();
   });
@@ -989,11 +1032,21 @@ function renderCoursePerformance() {
   if (state.performanceExtra === "video") series.push({ name: "\u89c6\u9891\u5b8c\u64ad", type: "line", smooth: true, data: courses.map((row) => numberValue(row.avg_video_completion_rate)) });
   if (state.performanceExtra === "session") series.push({ name: "\u5355\u6b21\u65f6\u957f", type: "line", smooth: true, data: courses.map((row) => numberValue(row.avg_session_duration_min, row.avg_study_time_hours)) });
   chart("coursePerformanceChart").setOption({
-    tooltip: { trigger: "axis" },
+    tooltip: {
+      trigger: "axis",
+      formatter(items) {
+        const row = courses[items[0]?.dataIndex] || {};
+        const lines = items.map((item) => {
+          const unit = item.seriesName.includes("分") ? "分" : item.seriesName.includes("时长") ? "min" : "%";
+          return `${item.marker}${item.seriesName}: ${formatNumber(item.value, unit)}`;
+        });
+        return [`<strong>${row.Course_ID || ""} ${row.Course_Name || ""}</strong>`, ...lines].join("<br/>");
+      },
+    },
     legend: { top: 0 },
-    grid: { left: 42, right: 18, top: 44, bottom: 54 },
+    grid: { left: 42, right: 18, top: 84, bottom: 44 },
     xAxis: { type: "category", data: courses.map((row) => row.Course_ID) },
-    yAxis: { type: "value", max: 100 },
+    yAxis: { type: "value", name: "百分比/分", max: 100 },
     series,
   });
 }
@@ -1009,7 +1062,7 @@ function renderAdminEducationRisk() {
   }));
   const barKey = state.adminDegreeBar === "score" ? "score_value" : state.adminDegreeBar === "study" ? "study_hours" : "ratio_value";
   const barName = state.adminDegreeBar === "score" ? "平均测验分" : state.adminDegreeBar === "study" ? "平均学习时长" : "人数占比";
-  const barUnit = state.adminDegreeBar === "study" ? "h" : state.adminDegreeBar === "ratio" ? "%" : "";
+  const barUnit = state.adminDegreeBar === "study" ? "h" : state.adminDegreeBar === "ratio" ? "%" : state.adminDegreeBar === "score" ? "分" : "";
   chart("educationRiskChart").setOption({
     tooltip: {
       trigger: "axis",
@@ -1021,27 +1074,26 @@ function renderAdminEducationRisk() {
           `${items[1]?.marker || ''}高风险占比: ${formatNumber(row.high_risk_value, '%')}`,
           `${items[2]?.marker || ''}安全占比: ${formatNumber(row.safe_value, '%')}`,
           `平均学习时长: ${formatNumber(row.study_hours, 'h')}`,
-          `平均测验分: ${formatNumber(row.score_value)}`,
+          `平均测验分: ${formatNumber(row.score_value, '分')}`,
           `人数占比: ${formatNumber(row.ratio_value, '%')}`,
         ].join('<br/>');
       },
     },
     legend: { top: 0 },
-    grid: { left: 54, right: 68, top: 44, bottom: 42, containLabel: true },
+    grid: { left: 44, right: 58, top: 44, bottom: 42, containLabel: true },
     xAxis: { type: "category", data: rows.map((row) => row.Education_Level) },
     yAxis: [
       { type: "value", name: barName, axisLabel: { formatter: (value) => state.adminDegreeBar === 'study' ? `${value}h` : state.adminDegreeBar === 'ratio' ? `${value}%` : value } },
       { type: "value", name: "风险%", axisLabel: { formatter: '{value}%' } },
     ],
     series: [
-      { name: barName, type: "bar", barWidth: 34, z: 3, data: rows.map((row) => row[barKey]), label: { show: true, position: "top", formatter: (params) => state.adminDegreeBar === "study" ? `${params.value}h` : state.adminDegreeBar === "ratio" ? `${params.value}%` : params.value }, itemStyle: { color: "#1976d2" } },
+      { name: barName, type: "bar", barWidth: 34, z: 3, data: rows.map((row) => row[barKey]), label: { show: true, position: "top", formatter: (params) => `${params.value}${barUnit}` }, itemStyle: { color: "#1976d2" } },
       { name: "高风险占比", type: "line", yAxisIndex: 1, smooth: true, data: rows.map((row) => row.high_risk_value), label: { show: true, position: "top", distance: 6, formatter: "{c}%" }, itemStyle: { color: "#d92d20" } },
       { name: "安全占比", type: "line", yAxisIndex: 1, smooth: true, data: rows.map((row) => row.safe_value), label: { show: true, position: "bottom", distance: 6, formatter: "{c}%" }, itemStyle: { color: "#12a594" } },
     ],
   });
   chart("educationRiskChart").off("click");
   chart("educationRiskChart").on("click", () => {
-    document.getElementById("tableRiskFilter").value = "高风险";
     renderWarningTable();
   });
 }
@@ -1049,13 +1101,12 @@ function renderAdminEducationRisk() {
 function warningTableRows() {
   const keyword = document.getElementById("studentKeyword")?.value.trim() || "";
   const courseKeyword = document.getElementById("courseKeyword")?.value.trim() || "";
-  const risk = document.getElementById("tableRiskFilter")?.value || "";
   const course = document.getElementById("adminCourseFilter")?.value || "";
   const source = warningRowsSource();
   return source.filter((row) => {
     if (keyword && !String(row.Student_ID).includes(keyword)) return false;
     if (courseKeyword && !String(row.Course_ID + row.Course_Name).includes(courseKeyword)) return false;
-    if (risk && row.warning_level !== risk) return false;
+    if (!String(row.warning_level).includes("高")) return false;
     if (course && row.Course_ID !== course) return false;
     return true;
   });
@@ -1102,10 +1153,19 @@ function renderResourceHeat() {
     .sort((a, b) => numberValue(b.access_volume) - numberValue(a.access_volume))
     .reverse();
   chart("resourceHeatChart").setOption({
-    tooltip: { trigger: "axis" },
+    tooltip: {
+      trigger: "axis",
+      formatter(items) {
+        const row = rows[items[0]?.dataIndex] || {};
+        return [
+          `<strong>${row.resource_name || row.resource_id || "--"}</strong>`,
+          ...items.map((item) => `${item.marker}${item.seriesName}: ${formatNumber(item.value, "次")}`),
+        ].join("<br/>");
+      },
+    },
     legend: { top: 0 },
     grid: { left: 230, right: 28, top: 44, bottom: 28 },
-    xAxis: { type: "value" },
+    xAxis: { type: "value", name: "次数", axisLabel: { formatter: axisUnitFormatter("次") } },
     yAxis: {
       type: "category",
       data: rows.map((row) => row.resource_name || row.resource_id),
@@ -1140,9 +1200,21 @@ function closeModal() {
   $("drillModal").classList.add("hidden");
 }
 
+function ruleJudgementText(row, keys, riskText, normalText) {
+  for (const key of keys) {
+    const value = row[key];
+    if (value === undefined || value === null || value === "") continue;
+    if (typeof value === "boolean") return value ? riskText : normalText;
+    if (value === 1 || value === "1") return riskText;
+    if (value === 0 || value === "0") return normalText;
+    return value;
+  }
+  return "--";
+}
+
 async function openStudentDrilldown() {
   if (currentRole() !== "admin") return;
-  const rows = warningRowsSource().length ? warningRowsSource() : await request("/api/warnings/students?page=1&page_size=50");
+  const rows = await request("/api/warnings/students?page=1&page_size=50");
   state.cache.warningRows = rows;
   openModal("\u5168\u91cf\u5b66\u751f\u5206\u9875\u5217\u8868\uff08\u793a\u4f8b\uff09", tableHtml(Array.isArray(rows) ? rows : rows.rows || [], ["Student_ID", "Course_ID", "warning_level", "Progress_Percentage"]));
 }
@@ -1151,21 +1223,19 @@ async function openRiskDrilldown(level) {
   if (currentRole() !== "admin") return;
   const rows = await request(`/api/warnings/students?warning_level=${encodeURIComponent(level)}&page=1&page_size=50`).catch(() => filteredWarnings(warningRowsSource()).filter((row) => row.warning_level === level));
   state.cache.warningRows = rows;
-  const list = (Array.isArray(rows) ? rows : rows.rows || []).map((row) => {
-    const detail = warningRuleDetail(row);
+  const sourceRows = Array.isArray(rows) ? rows : rows.rows || [];
+  const hasRiskFlags = sourceRows.some((row) => ["is_login_risk", "is_homework_risk", "is_progress_risk", "is_score_risk"].some((key) => row[key] !== undefined && row[key] !== null && row[key] !== ""));
+  const list = sourceRows.map((row) => {
     return {
       ...row,
-      warning_level: row.warning_level || detail.warningLevel,
-      risk_sum: row.risk_sum ?? detail.riskSum,
-      total_rule_judgement: detail.ruleSummary,
-      four_rule_metrics: detail.ruleDetail,
-      login_rule: detail.loginRisk ? '登录风险' : '登录正常',
-      assignment_rule: detail.assignmentRisk ? '作业风险' : '作业正常',
-      progress_rule: detail.progressRisk ? '进度风险' : '进度正常',
-      score_rule: detail.scoreRisk ? '成绩风险' : '成绩正常',
+      login_rule: ruleJudgementText(row, ["is_login_risk"], '登录风险', '登录正常'),
+      assignment_rule: ruleJudgementText(row, ["is_homework_risk"], '作业风险', '作业正常'),
+      progress_rule: ruleJudgementText(row, ["is_progress_risk"], '进度风险', '进度正常'),
+      score_rule: ruleJudgementText(row, ["is_score_risk"], '成绩风险', '成绩正常'),
     };
   });
-  openModal(`${level} 学生明细`, tableHtml(list, ["Student_ID", "Course_ID", "Course_Name", "warning_level", "risk_sum", "login_rule", "assignment_rule", "progress_rule", "score_rule", "Progress_Percentage"]));
+  const missingFlagsNotice = hasRiskFlags ? "" : `<p class="status error">接口已返回学生明细，但未包含 is_login_risk / is_homework_risk / is_progress_risk / is_score_risk 四个字段。</p>`;
+  openModal(`${level} 学生明细`, `${missingFlagsNotice}${tableHtml(list, ["Student_ID", "Course_ID", "Course_Name", "warning_level", "risk_sum", "is_login_risk", "is_homework_risk", "is_progress_risk", "is_score_risk", "login_rule", "assignment_rule", "progress_rule", "score_rule", "Progress_Percentage"])}`);
 }
 
 function tableHtml(rows, keys) {
@@ -1452,7 +1522,7 @@ function bindEvents() {
       renderAdminEducationRisk();
     });
   });
-  ["studentKeyword", "courseKeyword", "tableRiskFilter"].forEach((id) => {
+  ["studentKeyword", "courseKeyword"].forEach((id) => {
     document.getElementById(id)?.addEventListener("input", () => {
       state.warningPage = 1;
       renderWarningTable();
@@ -1498,12 +1568,10 @@ function bindEvents() {
     card.addEventListener("click", () => {
       if (currentRole() !== "admin") return;
       if (card.dataset.adminFocus === "high-risk") {
-        document.getElementById("tableRiskFilter").value = "\u9ad8\u98ce\u9669";
         showSection("admin");
         renderWarningTable();
       }
       if (card.dataset.adminFocus === "all-students") {
-        document.getElementById("tableRiskFilter").value = "";
         showSection("admin");
         renderWarningTable();
       }
